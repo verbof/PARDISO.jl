@@ -55,6 +55,14 @@ function initPARDISO(pardiso::ParDiSO)
     
     errorPARDISO(pardiso.error_);
 
+    if "OMP_NUM_THREADS" in keys(ENV)
+        pardiso.iparm[3] = int32(ENV["OMP_NUM_THREADS"]);
+    else
+        error("Set environment variable OMP_NUM_THREADS...");
+    end
+
+
+
 end
 
 

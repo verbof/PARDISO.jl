@@ -35,17 +35,17 @@ println(A2.colptr);
 println(A2.rowval);
 println(A2.nzval);
 
+pardiso = ParDiSO(-2, 1);
+
+initPARDISO(pardiso);
+
+
 #F2 = factorPARDISO(A2,2);
 sym = 0;
 ooc = 0;
 
-p  = ccall( (:factor_pardiso_, "/users/verbof/pardiso/libpils_pardiso.a"), 
-            Int64, 
-            (Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64}),
-             &n2,        &sym,       &ooc,       A2.nzval,     A2.rowval,  A2.colptr,  PARDISOstat);
 
 println("DEBUGGING: \n\n\n");
-
 
 toc();
 exit()

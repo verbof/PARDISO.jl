@@ -14,25 +14,21 @@ module PARDISO
         dparm::Array{Float64};
 
 
-        ParDiSO(matrixtype::Int64, msglevel::Int64) = begin
-                                                        new(zeros(Int64,64), 
-                                                            1,
-                                                            1,
-                                                            matrixtype,
-                                                            0,
-                                                            zeros(Int32,64),
-                                                            0,
-                                                            msglevel,
-                                                            0,
-                                                            zeros(Float64,64)
-                                                           );
+        ParDiSO(matrixtype::Int64, msglevel::Int64) = 
+        begin
+            new(zeros(Int64,64), 
+                1,
+                1,
+                matrixtype,
+                0,
+                zeros(Int32,64),
+                0,
+                msglevel,
+                0,
+                zeros(Float64,64)
+                );
 
-                                                        if "OMP_NUM_THREADS" in keys(ENV)
-                                                            iparm[3] = int32(ENV["OMP_NUM_THREADS"]);
-                                                        else
-                                                            error("Set environment variable OMP_NUM_THREADS...");
-                                                        end
-                                                      end 
+        end 
 
     end
 
