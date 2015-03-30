@@ -11,13 +11,15 @@ TYPE PARDISO_STRUC
 END TYPE PARDISO_STRUC 
 
 
-integer(kind=8):: pt                ! pardiso pointer
+integer(kind=8):: pt(64)                ! pardiso pointer
 integer(kind=8),intent(in):: mtype
 integer(kind=8),intent(in):: solver
-integer(kind=8),intent(out):: iparm(64) 
+integer(kind=4),intent(out):: iparm(64) 
 real(kind=8),intent(out):: dparm(64)
 
 integer(kind=8),intent(out):: ierr
+
+integer:: k
 
 
 !  .. PARDISO license check and initialize solver
@@ -26,9 +28,16 @@ integer(kind=8),intent(out):: ierr
 
 !  .. Numbers of Processors ( value of OMP_NUM_THREADS )
 
-      iparm(3) = 1
+    !DO k = 1,64
+    !    iparm(k) = k;
+    !    !pt(k)    = k;
+    !END DO
 
-      IF (ierr .NE. 0) THEN
+    !DO k = 1,64
+    !    dparm(k) = 0.0 + k;
+    !END DO
+
+        IF (ierr .NE. 0) THEN
         IF (ierr.EQ.-10 ) WRITE(*,*) 'No license file found'
         IF (ierr.EQ.-11 ) WRITE(*,*) 'License is expired'
         IF (ierr.EQ.-12 ) WRITE(*,*) 'Wrong username or hostname'
@@ -63,6 +72,9 @@ integer(kind=8),intent(out):: ierr
 !     Checks the consistency of the given matrix.
 !     Use this functionality only for debugging purposes
 
+WRITE(*,*) mtype
+WRITE(*,*) n
+
       CALL pardiso_chkmatrix  (mtype, n, A, iA, jA, ierr);
 
       IF (ierr .NE. 0) THEN
@@ -92,10 +104,10 @@ integer(kind=8),intent(in):: n
 real(kind=8),intent(in):: A(*)
 integer(kind=8),intent(in):: jA(*), iA(n+1)
 
-integer(kind=8),intent(in):: perm, nrhs, msglvl
-integer(kind=8):: iparm
+integer(kind=8),intent(in):: perm(*), nrhs, msglvl
+integer(kind=4):: iparm(64)
 real(kind=8):: dparm
-real(kind=8):: b, x
+real(kind=8):: b(*), x(*)
 
 
 integer(kind=8),intent(out):: ierr

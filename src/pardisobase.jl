@@ -36,21 +36,19 @@ function errorPARDISO(error_::Int64)
             print("license is expired.\n");
         elseif error_ == -12
             print("wrong username or hostname.\n");
-        else
-            println();
         end
 
+    else
+        println();
     end
 
 end
 
 function initPARDISO(pardiso::ParDiSO)
     
-
-    ccall( (:pardiso_init, PARDISOLIB),
-           Void,
-           (Ptr{Int64}, Ptr{Int64},     Ptr{Int64},     Ptr{Int32},    Ptr{Float64},  Ptr{Int64}),
-           pardiso.pt,  pardiso.mtype,  pardiso.solver, pardiso.iparm, pardiso.dparm, pardiso.error_);
+    ccall( (:pardiso_init_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+           (Ptr{Int64}, Ptr{Int64},     Ptr{Int64},      Ptr{Int32},    Ptr{Float64},  Ptr{Int64}),
+            pardiso.pt, &pardiso.mtype, &pardiso.solver, pardiso.iparm, pardiso.dparm, &pardiso.error_);
 
     
     errorPARDISO(pardiso.error_);
@@ -58,10 +56,10 @@ function initPARDISO(pardiso::ParDiSO)
     if "OMP_NUM_THREADS" in keys(ENV)
         pardiso.iparm[3] = int32(ENV["OMP_NUM_THREADS"]);
     else
-        error("Set environment variable OMP_NUM_THREADS...");
+        error("Set environment variable OMP_NUM_THREADS before running this code.");
     end
 
-
+    print(pardiso);
 
 end
 
@@ -69,8 +67,7 @@ end
 
 function checkPARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32})
     
-    ccall( (:pardiso_checkmatrix, PARDISOLIB),
-            Void,
+    ccall( (:pardiso_checkmatrix, PARDISOLIB), Void,
             ( Ptr{Int64},    Ptr{Int64}, Ptr{Float64}, Ptr{Int32},  Ptr{Int32},  Ptr{Int64}),
               pardiso.mtype, &(A.n),     A.nzval,      (A').colptr, (A').rowptr, pardiso.error_);
 

@@ -1,5 +1,7 @@
 module PARDISO
 
+importall Base;
+
     type ParDiSO 
 
         pt::Array{Int64};
@@ -28,10 +30,25 @@ module PARDISO
                 zeros(Float64,64)
                 );
 
-        end 
+        end
+
+
+        
 
     end
-
+    
+    show(io::IO, p::ParDiSO) = 
+        begin 
+            println(io, "ParDiSO(");
+            println(io, "        maxfct: $(p.maxfct)");
+            println(io, "        mnum:   $(p.mnum)");
+            println(io, "        mtype:  $(p.mtype)");
+            println(io, "        phase:  $(p.phase)");
+            println(io, "        solver: $(p.solver)");
+            println(io, "        msglvl: $(p.msglvl)");
+            println(io, "        error_: $(p.error_)");
+            println(io, "       );");
+        end
 
     PARDISOLIB = "$(ENV["HOME"])/.julia/v0.3/PARDISO/lib/PADISO"
 
