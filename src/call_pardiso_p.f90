@@ -1,4 +1,5 @@
 !-------------------------------------------------
+!-------------------------------------------------
 
 subroutine pardiso_init(pt, mtype, solver, iparm, dparm, ierr)
 !DIR$ ATTRIBUTES DLLEXPORT :: pardiso_init
@@ -11,13 +12,13 @@ TYPE PARDISO_STRUC
 END TYPE PARDISO_STRUC 
 
 
-integer(kind=8):: pt(64)                ! pardiso pointer
-integer(kind=8),intent(in):: mtype
-integer(kind=8),intent(in):: solver
+integer(kind=8),intent(out):: pt(64)                ! pardiso pointer
+integer(kind=4),intent(in):: mtype
+integer(kind=4),intent(in):: solver
 integer(kind=4),intent(out):: iparm(64) 
 real(kind=8),intent(out):: dparm(64)
 
-integer(kind=8),intent(out):: ierr
+integer(kind=4),intent(out):: ierr
 
 integer:: k
 
@@ -45,6 +46,8 @@ integer:: k
       ELSE
         WRITE(*,*) '[PARDISO]: License check was successful ... '
       END IF
+
+      WRITE(*,*) '[PARDISO]: Initialisation completed!'
      
 end subroutine pardiso_init
 
@@ -62,24 +65,24 @@ TYPE PARDISO_STRUC
 END TYPE PARDISO_STRUC 
 
 
-integer(kind=8),intent(in):: mtype
-integer(kind=8),intent(in):: n
+integer(kind=4),intent(in):: mtype
+integer(kind=4),intent(in):: n
 real(kind=8),intent(out):: A(*)
-integer(kind=8),intent(in):: ja(*), iA(n+1)
-integer(kind=8),intent(out):: ierr
+integer(kind=4),intent(in):: ja(*), iA(n+1)
+integer(kind=4),intent(out):: ierr
 
+!
 !  .. pardiso_chk_matrix(...)
 !     Checks the consistency of the given matrix.
 !     Use this functionality only for debugging purposes
 
-WRITE(*,*) mtype
-WRITE(*,*) n
+    WRITE(*,*) 'PARDISO is checking the matrix...'
 
-      CALL pardiso_chkmatrix  (mtype, n, A, iA, jA, ierr);
+      CALL pardiso_chkmatrix(mtype, n, A, iA, jA, ierr);
 
       IF (ierr .NE. 0) THEN
          WRITE(*,*) 'The following ERROR was detected: ', ierr
-        STOP
+         STOP
       ENDIF
      
 end subroutine pardiso_checkmatrix
@@ -88,8 +91,8 @@ end subroutine pardiso_checkmatrix
 !-------------------------------------------------
 
 subroutine pardiso_call( pt, maxfct, mnum, mtype, phase, n, A, jA, iA, perm, nrhs, iparm, msglvl, b, x, ierr, dparm)
-!DIR$ ATTRIBUTES DLLEXPORT :: factor_pardiso
-!DIR$ ATTRIBUTES ALIAS: 'factor_pardiso_':: factor_pardiso
+!DIR$ ATTRIBUTES DLLEXPORT :: pardiso_call
+!DIR$ ATTRIBUTES ALIAS: 'pardiso_call_':: pardiso_call
 
 implicit none
 
@@ -99,18 +102,19 @@ END TYPE PARDISO_STRUC
 
 integer(kind=8)::pt(64)
 
-integer(kind=8),intent(in):: maxfct, mnum, mtype, phase 
-integer(kind=8),intent(in):: n
+integer(kind=4),intent(in):: maxfct, mnum, mtype, phase 
+integer(kind=4),intent(in):: n
 real(kind=8),intent(in):: A(*)
-integer(kind=8),intent(in):: jA(*), iA(n+1)
+integer(kind=4),intent(in):: jA(*), iA(n+1)
 
-integer(kind=8),intent(in):: perm(*), nrhs, msglvl
+integer(kind=4),intent(in):: perm
+integer(kind=4),intent(in):: nrhs, msglvl
 integer(kind=4):: iparm(64)
 real(kind=8):: dparm
 real(kind=8):: b(*), x(*)
 
 
-integer(kind=8),intent(out):: ierr
+integer(kind=4),intent(out):: ierr
 
       CALL pardiso (pt, maxfct, mnum, mtype, phase, n, A, iA, jA, perm, nrhs, iparm, msglvl, b, x, ierr, dparm)
      

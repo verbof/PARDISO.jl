@@ -8,7 +8,7 @@
 
 
 
-function errorPARDISO(error_::Int64)
+function errorPARDISO(error_)
 
     if error_ != 0
   
@@ -44,13 +44,21 @@ function errorPARDISO(error_::Int64)
 
 end
 
+
+function nothingPARDISO()
+
+    ccall((:pardiso_nothing, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void, ());
+
+end
+
+
+
 function initPARDISO(pardiso::ParDiSO)
-    
+
     ccall( (:pardiso_init_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
-           (Ptr{Int64}, Ptr{Int64},     Ptr{Int64},      Ptr{Int32},    Ptr{Float64},  Ptr{Int64}),
+           (Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int32}, Ptr{Float64},  Ptr{Int64}),
             pardiso.pt, &pardiso.mtype, &pardiso.solver, pardiso.iparm, pardiso.dparm, &pardiso.error_);
 
-    
     errorPARDISO(pardiso.error_);
 
     if "OMP_NUM_THREADS" in keys(ENV)
@@ -59,21 +67,40 @@ function initPARDISO(pardiso::ParDiSO)
         error("Set environment variable OMP_NUM_THREADS before running this code.");
     end
 
-    print(pardiso);
-
+    
 end
 
 
 
 function checkPARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32})
-    
-    ccall( (:pardiso_checkmatrix, PARDISOLIB), Void,
-            ( Ptr{Int64},    Ptr{Int64}, Ptr{Float64}, Ptr{Int32},  Ptr{Int32},  Ptr{Int64}),
-              pardiso.mtype, &(A.n),     A.nzval,      (A').colptr, (A').rowptr, pardiso.error_);
 
+    if abs(pardiso.mtype) == 2
+
+        if issym(A)
+    
+            M = tril(A);
+
+            ccall( (:pardiso_checkmatrix_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+                    ( Ptr{Int64},   Ptr{Int64}, Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int64}),
+                    &pardiso.mtype, &(M.n),     M.nzval,      M.colptr,   M.rowval,   &pardiso.error_);
+
+        else
+            error("pardiso.mtype = ±2, but the matrix is not symmetric.");
+        end
+
+    elseif pardiso.mtype == 11 || pardiso.mtype == 13
+
+        ccall( (:pardiso_checkmatrix_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+                    ( Ptr{Int64},    Ptr{Int64}, Ptr{Float64},  Ptr{Int32}, Ptr{Int32}, Ptr{Int64}),
+                    pardiso.mtype,   &(A.n),     A.nzval,       A.colptr,   A.rowval,   pardiso.error_);
+
+    end
+        
 
     if pardiso.error_ != 0
         error("Error in consistency of matrix: $(pardiso.error_)");
+    else
+        println(" -> Matrix checked by PARDISO!");
     end
 
     errorPARDISO(pardiso.error_);
@@ -81,33 +108,39 @@ function checkPARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32})
 end
 
 
-function smbfctPARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32}, number_rhs::Int)
+function smbfctPARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32})
 	# Reordering and Symbolic Factorisation + memory allocation for factors
 
     pardiso.phase = 11;     # just analysis
-    ddum  = 0.0;            # double dummy
-    idum  = 0;              # integer dummy
+    ddum   = 0.0;           # double dummy
+    idum   = 0;             # integer dummy
+    idum32 = int32(0);      # 32-bit integer dummy
+    nrhs   = 1;
 
-    pardiso.iparm[33] = 1;  # compute determinant of the matrix
-
-    nrhs = number_rhs;
+    pardiso.iparm[33] = 1;   # compute determinant of the matrix
 
     if A.n != A.m
-		error("factorPARDISO: Matrix must be square!");
+	error("factorPARDISO: Matrix must be square!");
    	end
 
     println("Analysis of real matrix");
 
-    ccall( (:pardiso_call, PARDISOLIB),
+    M = tril(A);
+
+    printPARDISO(pardiso);
+    println();
+
+
+    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
         Void,
-        (Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64},
+        (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
         Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
-        Ptr{Int64}, Ptr{Int32}, Ptr{Int64}, Ptr{Float64}, Ptr{Float64},
-        Ptr{Int64}, Ptr{Float64}),
-        pardiso.pt, paridso.maxfct, pardiso.mnum, pardiso.mtype, pardiso.phase, &(A.n),
-        A.nzval, A.colptr, A.rowval, idum,
-        &nrhs, pardiso.iparm, pardiso.msglvl, ddum, ddum,
-        pardiso.error_, pardiso.dparm);
+        Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
+        Ptr{Int32}, Ptr{Float64}),
+        pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(M.n),
+        M.nzval, M.colptr, M.rowval, &idum32,
+        &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+        &pardiso.error_, pardiso.dparm);
     
     if error_ != 0
         error("Error in symbolic factorisation of matrix: $(pardiso.error_)");
@@ -131,32 +164,51 @@ function factorPARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32})
     pardiso.phase = 22;     # just numerical factorisation
     ddum  = 0.0;            # double dummy
     idum  = 0;              # integer dummy
+    idum32 = int32(0);      # 32-bit integer dummy
 
     if A.n != A.m
 		error("factorPARDISO: Matrix must be square!")
    	end
 
     println("Factorize real matrix")
+    
 
-    ccall( (:pardiso_call, PARDISOLIB),
+    M = tril(A);
+
+    println(M);
+    println(full(M));
+    println();
+
+    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        Void,
+        (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+        Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+        Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
+        Ptr{Int32}, Ptr{Float64}),
+        pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(M.n),
+        M.nzval, M.colptr, M.rowval, &idum32,
+        &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+        &pardiso.error_, pardiso.dparm);
+#=
+    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
         Void,
         (Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64},
         Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
         Ptr{Int64}, Ptr{Int32}, Ptr{Int64}, Ptr{Float64}, Ptr{Float64},
         Ptr{Int64}, Ptr{Float64}),
-        pardiso.pt, paridso.maxfct, pardiso.mnum, pardiso.mtype, pardiso.phase, &(A.n),
-        A.nzval, A.colptr, A.rowval, &idum,
-        &idum, pardiso.iparm, pardiso.msglvl, ddum, ddum,
-        pardiso.error_, pardiso.dparm);
+        pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(M.n),
+        M.nzval, M.rowval, M.colptr, &idum32,
+        &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+        &pardiso.error_, pardiso.dparm);
+=#
+
 
 
     errorPARDISO(pardiso.error_);
 
-    #factor = PARDISOfactorization(p,myid(),n,true,facTime);
-	# finalizer(factor,destroyPARDISO)
-    #return factor
-
 end
+
+
 
 function solvePARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32}, b::Vector{Float64})
 	# Generate LU-factorization of a real matrix A
@@ -171,16 +223,16 @@ function solvePARDISO(pardiso::ParDiSO, A::SparseMatrixCSC{Float64,Int32}, b::Ve
 
     println("Factorize real matrix")
 
-    ccall( (:pardiso_call, PARDISOLIB),
+    ccall( (:pardiso_call, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
         Void,
         (Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64}, Ptr{Int64},
         Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
         Ptr{Int64}, Ptr{Int32}, Ptr{Int64}, Ptr{Float64}, Ptr{Float64},
         Ptr{Int64}, Ptr{Float64}),
-        pardiso.pt, paridso.maxfct, pardiso.mnum, pardiso.mtype, pardiso.phase, &(A.n),
+        pardiso.pt, &paridso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
         A.nzval, A.colptr, A.rowval, &idum,
-        &idum, pardiso.iparm, pardiso.msglvl, b, x,
-        pardiso.error_, pardiso.dparm);
+        &idum, pardiso.iparm, &pardiso.msglvl, b, x,
+        &pardiso.error_, pardiso.dparm);
 
 
     errorPARDISO(pardiso.error_);
