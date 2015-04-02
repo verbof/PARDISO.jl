@@ -20,34 +20,22 @@ real(kind=8),intent(out):: dparm(64)
 
 integer(kind=4),intent(out):: ierr
 
-integer:: k
-
-
 !  .. PARDISO license check and initialize solver
 
       CALL pardisoinit(pt, mtype, solver, iparm, dparm, ierr)
 
 !  .. Numbers of Processors ( value of OMP_NUM_THREADS )
 
-    !DO k = 1,64
-    !    iparm(k) = k;
-    !    !pt(k)    = k;
-    !END DO
-
-    !DO k = 1,64
-    !    dparm(k) = 0.0 + k;
-    !END DO
-
-        IF (ierr .NE. 0) THEN
-        IF (ierr.EQ.-10 ) WRITE(*,*) 'No license file found'
-        IF (ierr.EQ.-11 ) WRITE(*,*) 'License is expired'
-        IF (ierr.EQ.-12 ) WRITE(*,*) 'Wrong username or hostname'
-        STOP
-      ELSE
+    IF (ierr .NE. 0) THEN
+        IF (ierr.EQ.-10) WRITE(*,*) 'No license file found'
+        IF (ierr.EQ.-11) WRITE(*,*) 'License is expired'
+        IF (ierr.EQ.-12) WRITE(*,*) 'Wrong username or hostname'
+                         STOP
+    ELSE
         WRITE(*,*) '[PARDISO]: License check was successful ... '
-      END IF
+    END IF
 
-      WRITE(*,*) '[PARDISO]: Initialisation completed!'
+    WRITE(*,*) '[PARDISO]: Initialisation completed!'
      
 end subroutine pardiso_init
 
@@ -90,7 +78,7 @@ end subroutine pardiso_checkmatrix
 !-------------------------------------------------
 !-------------------------------------------------
 
-subroutine pardiso_call( pt, maxfct, mnum, mtype, phase, n, A, jA, iA, perm, nrhs, iparm, msglvl, b, x, ierr, dparm)
+subroutine pardiso_call(pt, maxfct, mnum, mtype, phase, n, A, iA, jA, perm, nrhs, iparm, msglvl, b, x, ierr, dparm)
 !DIR$ ATTRIBUTES DLLEXPORT :: pardiso_call
 !DIR$ ATTRIBUTES ALIAS: 'pardiso_call_':: pardiso_call
 
@@ -110,28 +98,29 @@ integer(kind=4),intent(in):: jA(*), iA(n+1)
 integer(kind=4),intent(in):: perm
 integer(kind=4),intent(in):: nrhs, msglvl
 integer(kind=4):: iparm(64)
-real(kind=8):: dparm
+real(kind=8):: dparm(64)
 real(kind=8):: b(*), x(*)
 
-
 integer(kind=4),intent(out):: ierr
+
 
       CALL pardiso (pt, maxfct, mnum, mtype, phase, n, A, iA, jA, perm, nrhs, iparm, msglvl, b, x, ierr, dparm)
      
       WRITE(*,*) 'Reordering completed ... '
+      WRITE(*,*)
 
       IF (ierr .NE. 0) THEN
         WRITE(*,*) 'The following ERROR was detected: ', ierr
         STOP
       END IF
 
-      !WRITE(*,*) 'Number of nonzeros in factors   = ',iparm(18)
-      !WRITE(*,*) 'Number of factorization MFLOPS  = ',iparm(19)
+      !WRITE(*,*) 'Number of nonzeros in factors   = ', iparm(18)
+      !WRITE(*,*) 'Number of factorization MFLOPS  = ', iparm(19)
+      !IF (iparm(33) .EQ. 1) THEN
+      !  WRITE(*,*) 'log(det(A)) = ', dparm(33)
+      !ENDIF
 
 end subroutine pardiso_call
 
 !-------------------------------------------------
-
-
-
 

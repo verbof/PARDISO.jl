@@ -15,40 +15,49 @@ A  = A + im*spdiagm(rand(n),0);
 
 #println(A);
 
-
 nrhs = 10;
 rhs = randn(n,nrhs) + im*randn(n,nrhs);
 rhs2 = randn(n2,nrhs);
 
-#println(rhs);
-
-#println("Factorize complex matrix")
-#tic();
-#F1 = factorPARDISO(A,1);
-#toc();
-
-println("Factorize real matrix")
-tic();
-
-
-println(A2.colptr);
-println(A2.rowval);
-println(A2.nzval);
-
+println("******* DEBUG *******");
+println("PARDISO INITIALISATION");
 pardiso = ParDiSO(-2, 1);
 
-initPARDISO(pardiso);
+a = initPARDISO(pardiso);
+
+#println(pardiso.pt);
+
+println("PARDISO CHECK MATRIX");
+
+#d = rand(9);
+d = 0.5 * ones(9);
+B = speye(10) + spdiagm(d,+1, 10,10) + spdiagm(d,-1, 10,10);
+
+detB = det(B);
+
+B = convert(SparseMatrixCSC{Float64,Int32},B);
 
 
-#F2 = factorPARDISO(A2,2);
-sym = 0;
-ooc = 0;
+B = SparsePardisoCSR(B);
+
+#println(B.rowptr);
+#println(B.colval);
+
+@time checkPARDISO(pardiso, B);
+
+println("SYMBOLIC FACTORIZATION + FACTORIZATION");
+
+@time smbfctPARDISO(pardiso, B);
+@time factorPARDISO(pardiso, B);
 
 
-println("DEBUGGING: \n\n\n");
+if pardiso.iparm[33] == 1
+    println("Determinant of the matrix:     ", exp(pardiso.dparm[33]));
+    println("Residual between determinants: ", abs(exp(pardiso.dparm[33]) - detB));
+end
 
-toc();
-exit()
+println("*********************");
+exit();
 
 #println("Solve complex system")
 #tic();

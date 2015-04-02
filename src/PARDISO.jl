@@ -1,37 +1,36 @@
 module PARDISO
 
-importall Base;
+    importall Base;
 
     type ParDiSO 
 
-        pt::Array{Int64};
+        pt::Vector{Int64};
         maxfct::Int32;
         mnum::Int32;
         mtype::Int32;
         phase::Int32;
-        iparm::Array{Int32};
+        iparm::Vector{Int32};
         solver::Int32;
         msglvl::Int32;
         error_::Int32;
-        dparm::Array{Float64};
+        dparm::Vector{Float64};
 
 
-        ParDiSO(matrixtype::Int64, msglevel::Int64) = 
+        ParDiSO(matrixtype::Integer, msglevel::Integer) = 
         begin
             new(zeros(Int64,64), 
                 1,
                 1,
-                matrixtype,
+                int32(matrixtype),
                 0,
                 zeros(Int32,64),
                 0,
-                msglevel,
+                int32(msglevel),
                 0,
                 zeros(Float64,64)
                 );
 
         end
-
     end
     
     show(io::IO, p::ParDiSO) = 
@@ -66,31 +65,48 @@ importall Base;
     end
 
 
+    #type PardisoMatrixNotSquareException <:Exception 
+    #    A::Symbol
+    #end
+    #Base.showerror(io::IO, e::PardisoMatrixNotSquare) = print(io, e.A " not defined");
+    
+    type SparsePardisoCSR
 
-    type SparseMatrixCSR{Tv,Ti<:Integer} <: AbstractSparseMatrix{Tv,Ti}
-        m::Int              # Number of rows
-        n::Int              # Number of columns
-        colptr::Vector{Ti}  # Column i is in colptr[i]:(colptr[i+1]-1)
-        rowval::Vector{Ti}  # Row values of nonzeros
-        nzval::Vector{Tv}   # Nonzero values
+        upper::Bool;            # Matrix is stored in upper-triangular form
+        n::Int32;               # Number of rows/columns
+        rowptr::Vector{Int32};  # i-th row is in rowptr[i]:(rowptr[i+1]-1)
+        colval::Vector{Int32};  # Column values of nonzeros
+        nzval::Vector{Float64}; # Nonzero values
+        
+        SparsePardisoCSR(upper::Bool, rowptr::Vector{Int32}, colval::Vector{Int32}, nzval::Vector{Float64}) =
+                        new(upper, int32(length(rowptr)-1), rowptr, colval, nzval);
 
-
-        SparseMatrixCSR{Tv,Ti}(m::Integer, n::Integer, colptr::Vector{Ti}, rowval::Vector{Ti}, nzval::Vector{Tv}) =
-                               SparseMatrixCSR(int(m), int(n), colptr, rowval, nzval)
-
-        SparseMatrixCSR{Tv,Ti}(A::SparseMatrixCSC{Tv,Ti}) =
-                               SparseMatrixCSR(A.m, A.n, (A').colptr, (A').rowval, A.nzval)
+        SparsePardisoCSR(A::SparseMatrixCSC{Float64,Int32}) =
+        begin
+            if A.m != A.n
+                error("Matrix must be square, but size = ($m, $n).\n");
+                #throw(PardisoMatrixNotSquareException(A));
+            else
+                if issym(A)
+                    new(true, int32(A.n), tril(A).colptr, tril(A).rowval, tril(A).nzval);
+                else
+                    new(true, int32(A.n), (A').colptr,    (A').rowval,    A.nzval);
+                end
+            end
+        end 
 
     end
+
+
+    size(S::SparsePardisoCSR) = (S.n, S.n)
+    nnz(S::SparsePardisoCSR)  = int(S.rowptr[end]-1)
     
 
-
-
-    PARDISOLIB = "$(ENV["HOME"])/.julia/v0.3/PARDISO/lib/PADISO"
+    #PARDISOLIB = "$(ENV["HOME"])/.julia/v0.3/PARDISO/lib/PADISO"
 
     include("pardisobase.jl")
 
-    export  ParDiSO, SparseMatrixCSR, printPARDISO;
+    export  ParDiSO, SparsePardisoCSR, printPARDISO;
     export  initPARDISO,
             checkPARDISO,
             smbfctPARDISO,
