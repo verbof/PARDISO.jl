@@ -81,16 +81,24 @@ module PARDISO
         SparsePardisoCSR(upper::Bool, rowptr::Vector{Int32}, colval::Vector{Int32}, nzval::Vector{Float64}) =
                         new(upper, int32(length(rowptr)-1), rowptr, colval, nzval);
 
-        SparsePardisoCSR(A::SparseMatrixCSC{Float64,Int32}) =
+        SparsePardisoCSR(A::SparseMatrixCSC{Float64,Int}) =
         begin
             if A.m != A.n
                 error("Matrix must be square, but size = ($m, $n).\n");
                 #throw(PardisoMatrixNotSquareException(A));
             else
                 if issym(A)
-                    new(true, int32(A.n), tril(A).colptr, tril(A).rowval, tril(A).nzval);
+                    new(true, 
+                        int32(A.n), 
+                        convert(Vector{Int32},tril(A).colptr), 
+                        convert(Vector{Int32},tril(A).rowval), 
+                        tril(A).nzval);
                 else
-                    new(true, int32(A.n), (A').colptr,    (A').rowval,    A.nzval);
+                    new(false,
+                        int32(A.n), 
+                        convert(Vector{Int32},(A').colptr),
+                        convert(Vector{Int32},(A').rowval),
+                        A.nzval);
                 end
             end
         end 
@@ -101,16 +109,17 @@ module PARDISO
     size(S::SparsePardisoCSR) = (S.n, S.n)
     nnz(S::SparsePardisoCSR)  = int(S.rowptr[end]-1)
     
+    colwise(x::Array) = squeeze(reshape(x, prod(size(x)), 1), 2);
 
     #PARDISOLIB = "$(ENV["HOME"])/.julia/v0.3/PARDISO/lib/PADISO"
 
     include("pardisobase.jl")
 
-    export  ParDiSO, SparsePardisoCSR, printPARDISO;
+    export  ParDiSO, SparsePardisoCSR, printPARDISO, colwise;
     export  initPARDISO,
             checkPARDISO,
             smbfctPARDISO,
             factorPARDISO,
-            nothingPARDISO;
+            solvePARDISO;
 
 end
