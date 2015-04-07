@@ -4,79 +4,92 @@ using PARDISO
 using Base.Test
 include("getDivGrad.jl");
 
+A = getDivGrad(3,3,3);
+N = size(A,1);
 
-A  = getDivGrad(2,2,2);
-A2 = getDivGrad(2,2,2);
+println("********************** Testing REAL drivers **********************");
+println("\n\n");
 
+pardisoR = ParDiSO(-2, 0);
 
-n  = size(A,1);
-n2 = size(A2,1);
-A  = A + im*spdiagm(rand(n),0);
+initPARDISO(pardisoR);
 
-
-println("******* DEBUG *******");
-println("PARDISO INITIALISATION");
-
-pardiso = ParDiSO(+2, 1);
-
-a = initPARDISO(pardiso);
-
-#d = 0.5 * ones(9);
-#A = speye(10) + spdiagm(d,+1, 10,10) + spdiagm(d,-1, 10,10);
-A = speye(10) + sprand(10,10, 0.1); A = A + A';
 detA = det(A);
-#b    = [sum(A,2) 2*sum(A,2) 3*sum(A,2)];
-#b = sum(A,2);
 
-X = rand(10,5);     # Random solution
-
+X = rand(N,5);      # Random solution
 b = A*X;            # RHS's
 X = colwise(X);     # column-wise representation
 
 A = SparsePardisoCSR(A);
 
 println("PARDISO CHECK MATRIX");
+@time checkPARDISO(pardisoR, A);
 
-@time checkPARDISO(pardiso, A);
+
+println("SYMBOLIC FACTORIZATION + FACTORIZATION");
+pardisoR.iparm[33] = 1;
+
+@time smbfctPARDISO(pardisoR, A);
+@time factorPARDISO(pardisoR, A);
+
+println();
+if pardisoR.iparm[33] == 1
+    println("Determinant of the matrix:     ", exp(pardisoR.dparm[33]));
+    println("Absolute error on determinants: ", abs(exp(pardisoR.dparm[33]) - detA)/abs(detA));
+end
+
+println();
+println("SOLVE REAL SYSTEM");
+@time x = solvePARDISO(pardisoR, A, b);      # Solution computed by PARDISO
+
+println("Residual:     ", norm(X-x)/norm(X));   # Relative error on the solution
+println("Total memory: ", memoryPARDISO(pardisoR), " kylobites.\n");
+
+freePARDISO(pardisoR);
+
+
+
+println("\n\n");
+println("********************** Testing COMPLEX drivers **********************");
+println("\n\n");
+
+
+B = getDivGrad(10,10,10);
+M = size(B,1);
+f = rand(M-1) + im*rand(M-1);
+B = B + spdiagm(f,+1, M,M) + spdiagm(conj(f),-1, M,M);
+
+pardisoC = ParDiSO(-4, 1);
+
+initPARDISO(pardisoC);
+
+Y = rand(M,10)+im*rand(M,10);       # Random solution
+c = B*Y;                            # RHS's
+Y = colwise(Y);                     # column-wise representation
+
+#println(ishermitian(B) ? "HERMITIAN" : "NON-HERMITIAN");
+
+B = SparsePardisoCSR(B);
+
+println("PARDISO CHECK MATRIX");
+@time checkPARDISO(pardisoC, B);
+
 
 println("SYMBOLIC FACTORIZATION + FACTORIZATION");
 
-@time smbfctPARDISO(pardiso, A);
-@time factorPARDISO(pardiso, A);
+@time smbfctPARDISO(pardisoC, B);
+@time factorPARDISO(pardisoC, B);
 
+println();
 
-if pardiso.iparm[33] == 1
-    println("Determinant of the matrix:     ", exp(pardiso.dparm[33]));
-    println("Residual between determinants: ", abs(exp(pardiso.dparm[33]) - detA));
-end
+println("SOLVE COMPLEX SYSTEM");
+@time y = solvePARDISO(pardisoC, B, c);         # Solution computed by PARDISO
+println(size(Y));
+println("Residual:     ", norm(Y-y)/norm(Y));   # Relative error on the solution
+println("Total memory: ", memoryPARDISO(pardisoC), " kylobites.\n");
 
-println("SOLVE REAL SYSTEM");
+freePARDISO(pardisoC);
 
-@time x = solvePARDISO(pardiso, A, b);      # Solution computed by PARDISO
-
-println("Residual: ", norm(X-x)/norm(X));   # Relative error on the solution
-
-@test norm(X-x)/norm(X) < 1e-15;
-
-println("*********************");
-exit();
-
-#println("Solve complex system")
-#tic();
-#x = applyPARDISO(F1,rhs);
-#toc();
-#err = zeros(nrhs)
-#for i=1:nrhs
-#        err[i] =  norm(A*x[:,i]-rhs[:,i]) / norm(rhs[:,i]);
-#end
-#@test maximum(err) < 1e-14
-
-@test maximum(err) < 1e-14
-
-println("Free memory")
-destroyPARDISO(F1);
-destroyPARDISO(F2);
-
-println("DONE!")
-
-
+println("******* TESTS DONE! *******");
+println("\n\n");
+println("\n\n");

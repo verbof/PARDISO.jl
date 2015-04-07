@@ -12,7 +12,7 @@ else
 endif
 
 #SRC = pardiso_cmplx_p.f90  pardiso_p.f90 call_pardiso_cmplx_p.f90 call_pardiso_p.f90  
-SRC = call_pardiso_p.f90  
+SRC = call_pardiso.f90 call_pardiso_cmplx.f90 
 #LIB = -L/users/verbof/pardiso -lmetis41_pardiso -lmetis41-P_pardiso -lpardiso -lpils_pardiso  $(LIBBLAS)
 #LIB = -L/users/verbof/Libraries/linuxAMD64 -lpardiso500-INTEL1301-X86-64
 LIB = /users/verbof/Libraries/linuxAMD64/libpardiso500-INTEL1301-X86-64.so

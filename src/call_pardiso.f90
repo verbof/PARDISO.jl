@@ -106,7 +106,6 @@ integer(kind=4),intent(out):: ierr
 
       CALL pardiso (pt, maxfct, mnum, mtype, phase, n, A, iA, jA, perm, nrhs, iparm, msglvl, b, x, ierr, dparm)
      
-      WRITE(*,*) 'Reordering completed ... '
       WRITE(*,*)
 
       IF (ierr .NE. 0) THEN

@@ -4,7 +4,9 @@
 #        checkPARDISO,
 #        smbfctPARDISO,
 #        factorPARDISO,
-#        solvePARDISO
+#        solvePARDISO,
+#        memoryPARDISO
+#        freePARDISO;
 
 
 
@@ -68,17 +70,24 @@ end
 
 
 
-function checkPARDISO(pardiso::ParDiSO, A::SparsePardisoCSR)
+function checkPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
 
-    if abs(pardiso.mtype) == 2
+    if abs(pardiso.mtype) == 2 || abs(pardiso.mtype) == 4
         if !A.upper
-            error("pardiso.mtype = ±2 but the matrix is not in upper triangular form (A.upper = false)");
+            error("pardiso.mtype = ±2 or ±4, but the matrix is not in upper triangular form (A.upper = false)");
         end
     end
 
-    ccall( (:pardiso_checkmatrix_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
-            ( Ptr{Int32},   Ptr{Int32}, Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}),
-            &pardiso.mtype, &(A.n),     A.nzval,      A.rowptr,   A.colval,   &pardiso.error_);
+    if Tnzval == Float64
+        ccall( (:pardiso_checkmatrix_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+                ( Ptr{Int32},   Ptr{Int32}, Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}),
+                &pardiso.mtype, &(A.n),     A.nzval,      A.rowptr,   A.colval,   &pardiso.error_);
+
+    elseif Tnzval == Complex128
+        ccall( (:pardiso_checkmatrix_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+                ( Ptr{Int32},   Ptr{Int32}, Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}),
+                &pardiso.mtype, &(A.n),     A.nzval,         A.rowptr,   A.colval,   &pardiso.error_);
+    end
 
     if pardiso.error_ != 0
         error("Error in consistency of matrix: $(pardiso.error_)");
@@ -91,32 +100,44 @@ function checkPARDISO(pardiso::ParDiSO, A::SparsePardisoCSR)
 end
 
 
-function smbfctPARDISO(pardiso::ParDiSO, A::SparsePardisoCSR)
+function smbfctPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
 	# Reordering and Symbolic Factorisation + memory allocation for factors
 
     pardiso.phase = 11;     # just analysis
     ddum   = 0.0;           # double dummy
     idum   = 0;             # integer dummy
-    idum32 = int32(0);      # 32-bit integer dummy
-    nrhs   = 1;
+    nrhs   = 1;             # number of RHS's
 
-    pardiso.iparm[33] = 1;   # compute determinant of the matrix if iparm[33]=1;
-
-    println("Analysis of real matrix");
+    #pardiso.iparm[33] = 1;   # compute determinant of the matrix if iparm[33]=1;
 
     println();
 
-    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
-        Void,
-        (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
-         Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
-         Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
-         Ptr{Int32}, Ptr{Float64}),
-        pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
-        A.nzval, A.rowptr, A.colval, &idum32,
-        &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
-        &pardiso.error_, pardiso.dparm);
-    
+    if Tnzval == Float64
+        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+            &pardiso.error_, pardiso.dparm);
+
+    elseif Tnzval == Complex128
+        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Complex128}, Ptr{Complex128},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+            &pardiso.error_, pardiso.dparm);
+
+    end
+
     if pardiso.error_ != 0
         error("Error in symbolic factorisation of matrix: $(pardiso.error_)");
     end
@@ -129,25 +150,43 @@ end
 
 
 
-function factorPARDISO(pardiso::ParDiSO, A::SparsePardisoCSR)
+function factorPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
 	# Generate LU-factorization of a real matrix A
 
     pardiso.phase = 22;     # just numerical factorisation
-    ddum   = 0.0;           # double dummy
-    idum32 = int32(0);      # 32-bit integer dummy
+    ddum = 0.0;             # double dummy
+    idum = 0;               # 32-bit integer dummy
 
-    println("Factorize real matrix")
     
-    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
-        Void,
-        (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
-        Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
-        Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
-        Ptr{Int32}, Ptr{Float64}),
-        pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
-        A.nzval, A.rowptr, A.colval, &idum32,
-        &idum32, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
-        &pardiso.error_, pardiso.dparm);
+    if Tnzval == Float64
+        println("Factorizing real matrix...")
+        
+        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+            &pardiso.error_, pardiso.dparm);
+
+    elseif Tnzval == Complex128
+        println("Factorizing complex matrix...")
+
+        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Complex128}, Ptr{Complex128},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+            &pardiso.error_, pardiso.dparm);
+
+    end
 
     errorPARDISO(pardiso.error_);
 
@@ -155,30 +194,48 @@ end
 
 
 
-function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, n_rhs::Int64, b::Vector{Float64})
+function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_rhs::Int64, b::Vector{Tnzval})
 	# Computes the solution for the system Ax = b, where b is 1 RHS.
 
     pardiso.phase = 33;        # solve + iterative refinement
     ddum   = 0.0;              # double dummy
-    idum32 = int32(0);         # 32-bit integer dummy
-    nrhs   = int32(n_rhs);     # number of right-hand-sides
-    x      = zeros(nrhs*A.n);  # solution of the system
+    idum   = 0;                # integer dummy
+    nrhs   = n_rhs;            # number of right-hand-sides
 
     pardiso.iparm[6] = 0;      # puts the solution in x (b is NOT overwritten)
 
-    println("Factorize real matrix")
+    if Tnzval == Float64
+        println("Solving real system...");
 
-    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
-        Void,
-        (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
-        Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
-        Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
-        Ptr{Int32}, Ptr{Float64}),
-        pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
-        A.nzval, A.rowptr, A.colval, &idum32,
-        &nrhs, pardiso.iparm, &pardiso.msglvl, b, x,
-        &pardiso.error_, pardiso.dparm);
+        x = zeros(nrhs*A.n);  # solution of the system
+        
+        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &nrhs, pardiso.iparm, &pardiso.msglvl, b, x,
+            &pardiso.error_, pardiso.dparm);
 
+    elseif Tnzval == Complex128
+        println("Solving complex system...");
+    
+        x = zeros(Complex128, nrhs*A.n);  # solution of the system
+        
+        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Complex128}, Ptr{Complex128},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &nrhs, pardiso.iparm, &pardiso.msglvl, b, x,
+            &pardiso.error_, pardiso.dparm);
+    end
 
     errorPARDISO(pardiso.error_);
 
@@ -186,9 +243,24 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, n_rhs::Int64, b::Ve
 
 end
 
+#=============================================================================
+#
+# The following function checks if the RHS provided is a column vector
+# containing - at least one - RHS('s) or the RHS's are provided a a matrix. In
+# the second case, the vector is reshaped.
+#
+#         1   2  ... nrhs
+#       +---+---+---+---+                   
+#       | * | * |   | * |                         1           2           3
+#       | * | * |   | * |                   +-----------+-----------+------···
+# b  =  | * | * |...| * |   --->  RESHAPED: | * * * * * | * * * * * | * * * ···
+#       | * | * |   | * |                   +-----------+-----------+------···
+#       | * | * |   | * |
+#       +---+---+---+---+
+#
+=============================================================================#
 
-
-function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array{Float64})
+function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, b::Array{Tnzval})
 	# Computes the solution for the system Ax = b, where b is the COLUMNWISE
     # representation of the RHS's.
 
@@ -198,18 +270,18 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array{Float64})
     if length(s) == 0
         error("Provide at least one RHS!");
         
-    elseif length(s) == 1
-        if s[1]%A.n == 0
+    elseif length(s) == 1           # if b is column vector
+        if s[1]%A.n == 0            # check if b has a correct number of entries
             B    = b;
-            nrhs = int(s[1]/A.n);
+            nrhs = int(s[1]/A.n);   # compute the number of RHS's stored in b
         else
             error("length(b) = ", s[1], " is not a multiple of A.n = ", A.n, "\n");
         end
         
     else
-        if s[1] == A.n
-            B    = colwise(b);
-            nrhs = s[2];
+        if s[1] == A.n              # if b is not a column vector, check if it has a correct number of rows
+            B    = colwise(b);      # create the columnwise version of b and store it in B
+            nrhs = s[2];            # the number of RHS is the number of columns of b
         else
             error("The dimension of the ", s[2], "RHS's provided are not consistent with ", A.n, "\n");
         end
@@ -219,3 +291,38 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array{Float64})
     return solvePARDISO(pardiso, A, nrhs, B);
 
 end
+
+
+function memoryPARDISO(pardiso::ParDiSO)
+
+    # Returns the peak memory, in kB, consumption by PARDISO.
+
+    return max(pardiso.iparm[15], pardiso.iparm[16]+pardiso.iparm[17]);
+
+end
+
+
+function freePARDISO(pardiso::ParDiSO)
+    
+    # Frees all the PARDISO memory.
+
+    idum = int32(0);
+    ddum = 0.0;
+
+    pardiso.phase = int32(-1);
+
+    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        Void,
+        (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+        Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+        Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
+        Ptr{Int32}, Ptr{Float64}),
+        pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &idum,
+        &ddum, &idum, &idum, &idum,
+        &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+        &pardiso.error_, pardiso.dparm);
+
+    errorPARDISO(pardiso.error_);
+
+end
+
