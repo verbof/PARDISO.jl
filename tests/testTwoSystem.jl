@@ -4,13 +4,13 @@ using PARDISO
 using Base.Test
 include("getDivGrad.jl");
 
-A = getDivGrad(3,3,3);
+A = getDivGrad(80,80,80);
 N = size(A,1);
 
 println("********************** Testing REAL drivers **********************");
 println("\n\n");
 
-pardisoR = ParDiSO(-2, 0);
+pardisoR = ParDiSO(-2, 1);
 
 initPARDISO(pardisoR);
 
@@ -54,7 +54,7 @@ println("********************** Testing COMPLEX drivers **********************")
 println("\n\n");
 
 
-B = getDivGrad(10,10,10);
+B = getDivGrad(80,80,80);
 M = size(B,1);
 f = rand(M-1) + im*rand(M-1);
 B = B + spdiagm(f,+1, M,M) + spdiagm(conj(f),-1, M,M);
@@ -63,7 +63,7 @@ pardisoC = ParDiSO(-4, 1);
 
 initPARDISO(pardisoC);
 
-Y = rand(M,10)+im*rand(M,10);       # Random solution
+Y = rand(Complex128, M, 10);        # Random solution
 c = B*Y;                            # RHS's
 Y = colwise(Y);                     # column-wise representation
 
@@ -84,7 +84,7 @@ println();
 
 println("SOLVE COMPLEX SYSTEM");
 @time y = solvePARDISO(pardisoC, B, c);         # Solution computed by PARDISO
-println(size(Y));
+
 println("Residual:     ", norm(Y-y)/norm(Y));   # Relative error on the solution
 println("Total memory: ", memoryPARDISO(pardisoC), " kylobites.\n");
 

@@ -5,7 +5,7 @@ This interface is based on the type **ParDiSO**. This type contains the informat
 ## The ParDiSO type
 The basic constructor 
 
-        ParDiSO(matrixtype::Integer, msglevel::Int);
+        ParDiSO(matrixtype::Integer, msglevel::Integer);
 
 creates a variable that is going to be used for a matrix of the the type `matrixtype` and with a verbose-level `msglevel` (`0`: no messages from PARDISO, `1`: verbose mode).
 

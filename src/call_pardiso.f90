@@ -7,10 +7,6 @@ subroutine pardiso_init(pt, mtype, solver, iparm, dparm, ierr)
 
 implicit none
 
-TYPE PARDISO_STRUC
-   INTEGER :: NN
-END TYPE PARDISO_STRUC 
-
 
 integer(kind=8),intent(out):: pt(64)                ! pardiso pointer
 integer(kind=4),intent(in):: mtype
@@ -35,7 +31,7 @@ integer(kind=4),intent(out):: ierr
         WRITE(*,*) '[PARDISO]: License check was successful ... '
     END IF
 
-    WRITE(*,*) '[PARDISO]: Initialisation completed!'
+    WRITE(*,*) '[PARDISO]: Initialisation completed.'
      
 end subroutine pardiso_init
 
@@ -47,10 +43,6 @@ subroutine pardiso_checkmatrix(mtype, n, A, iA, jA, ierr)
 !DIR$ ATTRIBUTES ALIAS: 'pardiso_checkmatrix_':: pardiso_checkmatrix
 
 implicit none
-
-TYPE PARDISO_STRUC
-   INTEGER :: NN
-END TYPE PARDISO_STRUC 
 
 
 integer(kind=4),intent(in):: mtype
@@ -64,7 +56,7 @@ integer(kind=4),intent(out):: ierr
 !     Checks the consistency of the given matrix.
 !     Use this functionality only for debugging purposes
 
-    WRITE(*,*) 'PARDISO is checking the matrix...'
+    WRITE(*,*) '[PARDISO]: Checking the matrix...'
 
       CALL pardiso_chkmatrix(mtype, n, A, iA, jA, ierr);
 
@@ -72,6 +64,8 @@ integer(kind=4),intent(out):: ierr
          WRITE(*,*) 'The following ERROR was detected: ', ierr
          STOP
       ENDIF
+
+    WRITE(*,*) '[PARDISO]: Matrix checked.'
      
 end subroutine pardiso_checkmatrix
 
@@ -83,10 +77,6 @@ subroutine pardiso_call(pt, maxfct, mnum, mtype, phase, n, A, iA, jA, perm, nrhs
 !DIR$ ATTRIBUTES ALIAS: 'pardiso_call_':: pardiso_call
 
 implicit none
-
-TYPE PARDISO_STRUC
-   INTEGER :: NN
-END TYPE PARDISO_STRUC 
 
 integer(kind=8)::pt(64)
 
@@ -106,10 +96,8 @@ integer(kind=4),intent(out):: ierr
 
       CALL pardiso (pt, maxfct, mnum, mtype, phase, n, A, iA, jA, perm, nrhs, iparm, msglvl, b, x, ierr, dparm)
      
-      WRITE(*,*)
-
       IF (ierr .NE. 0) THEN
-        WRITE(*,*) 'The following ERROR was detected: ', ierr
+        WRITE(*,*) '[PARDISO]: The following ERROR was detected: ', ierr
         STOP
       END IF
 

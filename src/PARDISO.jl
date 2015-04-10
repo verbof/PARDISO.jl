@@ -16,7 +16,7 @@ module PARDISO
         dparm::Vector{Float64};
 
 
-        ParDiSO(matrixtype::Integer, msglevel::Integer) = 
+        ParDiSO(matrixtype::Integer = 0, msglevel::Integer = 0) = 
         begin
             new(zeros(Int64,64), 
                 1,
@@ -31,6 +31,7 @@ module PARDISO
                 );
 
         end
+
     end
     
     show(io::IO, p::ParDiSO) = 
@@ -70,79 +71,12 @@ module PARDISO
     #end
     #Base.showerror(io::IO, e::PardisoMatrixNotSquare) = print(io, e.A " not defined");
 
-    type SparsePardisoCSR{T<:Number} <: AbstractSparseMatrix{T,Int32}
-
-        upper::Bool;                # Matrix is stored in upper-triangular form
-        n::Int32;                   # Number of rows/columns
-        rowptr::Vector{Int32};      # i-th row is in rowptr[i]:(rowptr[i+1]-1)
-        colval::Vector{Int32};      # Column values of nonzeros
-        nzval::Vector{T};           # Nonzero values
-
-    end 
-
-        
-    SparsePardisoCSR{T}(upper::Bool, rowptr::Vector{Int32}, colval::Vector{Int32}, nzval::Vector{T}) =
-                        SparsePardisoCSR(upper, int32(length(rowptr)-1), rowptr, colval, nzval);
-
-    SparsePardisoCSR{Float64}(A::SparseMatrixCSC{Float64,Int}) =
-    begin
-        if A.m != A.n
-            error("Matrix must be square, but size = ($m, $n).\n");
-            #throw(PardisoMatrixNotSquareException(A));
-        else
-            if issym(A)
-                SparsePardisoCSR(true, 
-                    int32(A.n), 
-                    convert(Vector{Int32},tril(A).colptr), 
-                    convert(Vector{Int32},tril(A).rowval), 
-                    tril(A).nzval);
-            else
-                SparsePardisoCSR(false,
-                    int32(A.n), 
-                    convert(Vector{Int32},(A').colptr),
-                    convert(Vector{Int32},(A').rowval),
-                    A.nzval);
-            end
-        end
-    end 
-
-    SparsePardisoCSR{Complex128}(A::SparseMatrixCSC{Complex128,Int}) =
-    begin
-        if A.m != A.n
-            error("Matrix must be square, but size = ($m, $n).\n");
-            #throw(PardisoMatrixNotSquareException(A));
-        else
-            if issym(A)
-                SparsePardisoCSR(true, 
-                    int32(A.n), 
-                    convert(Vector{Int32},tril(A).colptr), 
-                    convert(Vector{Int32},tril(A).rowval), 
-                    tril(A).nzval);
-            
-            elseif ishermitian(A)
-                SparsePardisoCSR(true, 
-                    int32(A.n), 
-                    convert(Vector{Int32},tril(A).colptr), 
-                    convert(Vector{Int32},tril(A).rowval), 
-                    tril(A.').nzval);
-
-            else
-                SparsePardisoCSR(false,
-                    int32(A.n), 
-                    convert(Vector{Int32},(A.').colptr),
-                    convert(Vector{Int32},(A.').rowval),
-                    (A.').nzval);
-            end
-        end
-    end 
-
-    size(S::SparsePardisoCSR) = (S.n, S.n)
-    nnz(S::SparsePardisoCSR)  = int(S.rowptr[end]-1)
-    
     colwise(x::Array) = squeeze(reshape(x, prod(size(x)), 1), 2);
+    
 
     #PARDISOLIB = "$(ENV["HOME"])/.julia/v0.3/PARDISO/lib/PADISO"
 
+    include("sparsepardiso.jl")
     include("pardisobase.jl")
 
     export  ParDiSO, SparsePardisoCSR, printPARDISO, colwise;

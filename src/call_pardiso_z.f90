@@ -4,11 +4,6 @@ subroutine pardiso_checkmatrix_z(mtype, n, A, iA, jA, ierr)
 
 implicit none
 
-TYPE PARDISO_STRUC
-   INTEGER :: NN
-END TYPE PARDISO_STRUC 
-
-
 integer(kind=4),intent(in):: mtype
 integer(kind=4),intent(in):: n
 complex(kind=8),intent(out):: A(*)
@@ -47,10 +42,6 @@ subroutine pardiso_call_z(pt, maxfct, mnum, mtype, phase, n, A, iA, jA, perm, nr
 !DIR$ ATTRIBUTES ALIAS: 'pardiso_call_z_':: pardiso_call_z
 
 implicit none
-
-TYPE PARDISO_STRUC
-   INTEGER :: NN
-END TYPE PARDISO_STRUC 
 
 integer(kind=8)::pt(64)
 
