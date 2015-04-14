@@ -273,7 +273,7 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
         
     elseif length(s) == 1           # if b is column vector
         if s[1]%A.n == 0            # check if b has a correct number of entries
-            nrhs = int(s[1]/A.n);   # compute the number of RHS's stored in b
+            nrhs = Int(s[1]/A.n);   # compute the number of RHS's stored in b
         else
             error("length(b) = ", s[1], " is not a multiple of A.n = ", A.n, "\n");
         end

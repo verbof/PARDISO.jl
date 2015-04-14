@@ -14,7 +14,7 @@ end
 
     
 SparsePardisoCSR{T}(upper::Bool, rowptr::Vector{Int32}, colval::Vector{Int32}, nzval::Vector{T}) =
-                    SparsePardisoCSR(upper, int32(length(rowptr)-1), rowptr, colval, nzval);
+                    SparsePardisoCSR(upper, Int32(length(rowptr)-1), rowptr, colval, nzval);
 
 SparsePardisoCSR{Float64}(A::SparseMatrixCSC{Float64,Int}) =
 begin
@@ -24,13 +24,13 @@ begin
     else
         if issym(A)
             SparsePardisoCSR(true, 
-                int32(A.n), 
+                Int32(A.n), 
                 convert(Vector{Int32},tril(A).colptr), 
                 convert(Vector{Int32},tril(A).rowval), 
                 tril(A).nzval);
         else
             SparsePardisoCSR(false,
-                int32(A.n), 
+                Int32(A.n), 
                 convert(Vector{Int32},(A').colptr),
                 convert(Vector{Int32},(A').rowval),
                 A.nzval);
@@ -46,21 +46,21 @@ begin
     else
         if issym(A)
             SparsePardisoCSR(true, 
-                int32(A.n), 
+                Int32(A.n), 
                 convert(Vector{Int32},tril(A).colptr), 
                 convert(Vector{Int32},tril(A).rowval), 
                 tril(A).nzval);
         
         elseif ishermitian(A)
             SparsePardisoCSR(true, 
-                int32(A.n), 
+                Int32(A.n), 
                 convert(Vector{Int32},tril(A).colptr), 
                 convert(Vector{Int32},tril(A).rowval), 
                 tril(A.').nzval);
 
         else
             SparsePardisoCSR(false,
-                int32(A.n), 
+                Int32(A.n), 
                 convert(Vector{Int32},(A.').colptr),
                 convert(Vector{Int32},(A.').rowval),
                 (A.').nzval);
