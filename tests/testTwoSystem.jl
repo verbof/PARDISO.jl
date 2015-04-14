@@ -1,10 +1,9 @@
 # Factorize two different matrices (one real, one complex) and solve for multiple rhs and free memory
 
 using PARDISO
-using Base.Test
 include("getDivGrad.jl");
 
-A = getDivGrad(80,80,80);
+A = getDivGrad(8,8,8);
 N = size(A,1);
 
 println("********************** Testing REAL drivers **********************");
@@ -27,7 +26,7 @@ println("PARDISO CHECK MATRIX");
 
 
 println("SYMBOLIC FACTORIZATION + FACTORIZATION");
-pardisoR.iparm[33] = 1;
+#pardisoR.iparm[33] = 1;
 
 @time smbfctPARDISO(pardisoR, A);
 @time factorPARDISO(pardisoR, A);
@@ -48,13 +47,12 @@ println("Total memory: ", memoryPARDISO(pardisoR), " kylobites.\n");
 freePARDISO(pardisoR);
 
 
-
 println("\n\n");
 println("********************** Testing COMPLEX drivers **********************");
 println("\n\n");
 
 
-B = getDivGrad(80,80,80);
+B = getDivGrad(8,8,8);
 M = size(B,1);
 f = rand(M-1) + im*rand(M-1);
 B = B + spdiagm(f,+1, M,M) + spdiagm(conj(f),-1, M,M);

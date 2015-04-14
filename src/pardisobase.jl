@@ -60,7 +60,7 @@ function initPARDISO(pardiso::ParDiSO)
     errorPARDISO(pardiso.error_);
 
     if "OMP_NUM_THREADS" in keys(ENV)
-        pardiso.iparm[3] = int32(ENV["OMP_NUM_THREADS"]);
+        pardiso.iparm[3] = Int32(parse(ENV["OMP_NUM_THREADS"]));
     else
         error("Set environment variable OMP_NUM_THREADS before running this code.");
     end
@@ -196,7 +196,7 @@ end
 
 
 
-function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_rhs::Int64, b::Vector{Tnzval})
+function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_rhs::Int64, b::Array{Tnzval})
 	# Computes the solution for the system Ax = b, where b is 1 RHS.
 
     pardiso.phase = 33;                 # solve + iterative refinement
@@ -246,7 +246,7 @@ end
 
 
 #=============================================================================
-#
+#                       NOT ANYMORE (IT IS USELESS)
 # The following function checks if the RHS provided is a column vector
 # containing - at least one - RHS('s) or the RHS's are provided a a matrix. In
 # the second case, the vector is reshaped.
@@ -263,8 +263,7 @@ end
 =============================================================================#
 
 function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
-	# Computes the solution for the system Ax = b, where b is the COLUMNWISE
-    # representation of the RHS's.
+	# Computes the correct number of RHS's for an arbitrary vector b;
 
     s    = size(b);
     nrhs = 0;
@@ -274,7 +273,6 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
         
     elseif length(s) == 1           # if b is column vector
         if s[1]%A.n == 0            # check if b has a correct number of entries
-            B    = b;
             nrhs = int(s[1]/A.n);   # compute the number of RHS's stored in b
         else
             error("length(b) = ", s[1], " is not a multiple of A.n = ", A.n, "\n");
@@ -282,7 +280,6 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
         
     else                            # if b is not a column vector
         if s[1] == A.n              # check if it has a correct number of rows
-            B    = colwise(b);      # create the columnwise version of b and store it in B
             nrhs = s[2];            # the number of RHS is the number of columns of b
         else
             error("The dimension of the ", s[2], "RHS's provided are not consistent with ", A.n, "\n");
@@ -291,18 +288,16 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
     end
 
 
-    if eltype(A) == Complex128 && eltype(B) == Float64
-        B = complex(B);
+    if eltype(A) == Complex128 && eltype(b) == Float64
+        return solvePARDISO(pardiso, A, nrhs, complex(b));
     end
-
-
-    return solvePARDISO(pardiso, A, nrhs, B);
+    
+    return solvePARDISO(pardiso, A, nrhs, float(b));
 
 end
 
 
 function memoryPARDISO(pardiso::ParDiSO)
-
     # Returns the peak memory, in kB, consumption by PARDISO.
 
     return max(pardiso.iparm[15], pardiso.iparm[16]+pardiso.iparm[17]);
@@ -315,10 +310,10 @@ function freePARDISO(pardiso::ParDiSO)
     
     # Free all the PARDISO memory.
 
-    idum = int32(0);
+    idum = Int32(0);
     ddum = 0.0;
 
-    pardiso.phase = int32(-1);
+    pardiso.phase = Int32(-1);
 
     ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
         Void,

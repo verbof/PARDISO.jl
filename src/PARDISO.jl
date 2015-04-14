@@ -21,15 +21,14 @@ module PARDISO
             new(zeros(Int64,64), 
                 1,
                 1,
-                int32(matrixtype),
+                Int32(matrixtype),
                 0,
                 zeros(Int32,64),
                 0,
-                int32(msglevel),
+                Int32(msglevel),
                 0,
                 zeros(Float64,64)
                 );
-
         end
 
     end
@@ -78,6 +77,7 @@ module PARDISO
 
     include("sparsepardiso.jl")
     include("pardisobase.jl")
+    include("pardisoext.jl");
 
     export  ParDiSO, SparsePardisoCSR, printPARDISO, colwise;
     export  initPARDISO,
@@ -86,6 +86,7 @@ module PARDISO
             factorPARDISO,
             solvePARDISO,
             memoryPARDISO,
-            freePARDISO;
+            freePARDISO,
+            pardisoSolveSystem;
 
 end
