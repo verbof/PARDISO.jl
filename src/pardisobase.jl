@@ -53,7 +53,7 @@ function initPARDISO(pardiso::ParDiSO)
     #const PARDISOLIB = "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO";
 
 
-    ccall( (:pardiso_init_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+    ccall( (:pardiso_init_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"), Void,
            (Ptr{Int64}, Ptr{Int32},     Ptr{Int32},      Ptr{Int32},    Ptr{Float64},  Ptr{Int32}),
             pardiso.pt, &pardiso.mtype, &pardiso.solver, pardiso.iparm, pardiso.dparm, &pardiso.error_);
 
@@ -83,12 +83,12 @@ function checkPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
     end
 
     if Tnzval == Float64
-        ccall( (:pardiso_checkmatrix_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+        ccall( (:pardiso_checkmatrix_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"), Void,
                 ( Ptr{Int32},   Ptr{Int32}, Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}),
                 &pardiso.mtype, &(A.n),     A.nzval,      A.rowptr,   A.colval,   &pardiso.error_);
 
     elseif Tnzval == Complex128
-        ccall( (:pardiso_checkmatrix_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"), Void,
+        ccall( (:pardiso_checkmatrix_z_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"), Void,
                 ( Ptr{Int32},   Ptr{Int32}, Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}),
                 &pardiso.mtype, &(A.n),     A.nzval,         A.rowptr,   A.colval,   &pardiso.error_);
     end
@@ -113,7 +113,7 @@ function smbfctPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
     #pardiso.iparm[33] = 1;   # compute determinant of the matrix if iparm[33]=1;
 
     if Tnzval == Float64
-        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
             (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
@@ -125,7 +125,7 @@ function smbfctPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
             &pardiso.error_, pardiso.dparm);
 
     elseif Tnzval == Complex128
-        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
             (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
@@ -161,7 +161,7 @@ function factorPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
     if Tnzval == Float64
         println("Factorizing real matrix...")
         
-        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
             (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
@@ -175,7 +175,7 @@ function factorPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
     elseif Tnzval == Complex128
         println("Factorizing complex matrix...")
 
-        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
             (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
@@ -210,7 +210,7 @@ function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_r
     if Tnzval == Float64
         println("Solving real system...");
 
-        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        ccall( (:pardiso_call_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
             (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
@@ -225,7 +225,7 @@ function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_r
     elseif Tnzval == Complex128
         println("Solving complex system...");
     
-        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+        ccall( (:pardiso_call_z_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
             (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
@@ -315,7 +315,7 @@ function freePARDISO(pardiso::ParDiSO)
 
     pardiso.phase = Int32(-1);
 
-    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO"),
+    ccall( (:pardiso_call_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
         Void,
         (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
         Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},

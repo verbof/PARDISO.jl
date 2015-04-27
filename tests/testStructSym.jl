@@ -35,7 +35,7 @@ freePARDISO(p);
 
 println("********************** COMPLEX STRUCT. SYMM.  **********************");
 
-p = ParDiSO(3,0);
+p = ParDiSO(3,1);
 initPARDISO(p);
 
 M = 100;

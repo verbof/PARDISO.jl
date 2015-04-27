@@ -2,6 +2,18 @@
 Julia drivers for PARDISO libraries.
 This interface is based on the type **ParDiSO**. This type contains the information needed by PARDISO to perform the essential operations.
 
+## Installation
+Clone this repository in the julia packages folder:
+
+    cd $JULIA_PKGDIR                                        (default: ~/.julia/v0.4)
+    git clone https://github.com/verbof/PARDISO.jl PARDISO
+    cd PARDISO/src
+                    
+Set correctly the `CC`, `FC`, `CL` variables to the correct values for your system in `Makefile.inc`.
+
+Then, modify the `Makefile` in order to link to the correct PARDISO shared library needed for compiling.
+
+
 ## The ParDiSO type
 The basic constructor 
 
