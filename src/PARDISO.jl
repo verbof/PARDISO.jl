@@ -4,16 +4,16 @@ module PARDISO
 
     type ParDiSO 
 
-        pt::Vector{Int64};
-        maxfct::Int32;
-        mnum::Int32;
-        mtype::Int32;
-        phase::Int32;
-        iparm::Vector{Int32};
-        solver::Int32;
-        msglvl::Int32;
-        error_::Int32;
-        dparm::Vector{Float64};
+        pt::Vector{Int64};      # Pointer to PARDISO memory
+        maxfct::Int32;          # Maximunm number of factors w/ same non-zero structure
+        mnum::Int32;            # Index of the matrix, 1 <= mnum <= maxfct.
+        mtype::Int32;           # Matrix Type
+        phase::Int32;           # PARDISO Phase
+        iparm::Vector{Int32};   # Integer parameters
+        solver::Int32;          # Solver. 0: sparse direct; 1: multi-recursive iterative
+        msglvl::Int32;          # Message Level. 0: no messages; 1: output statistics
+        error_::Int32;          # Error. On output indicates the error detected
+        dparm::Vector{Float64}; # Float parameters
 
 
         ParDiSO(matrixtype::Integer = 0, msglevel::Integer = 0) = 
@@ -71,7 +71,7 @@ module PARDISO
     #Base.showerror(io::IO, e::PardisoMatrixNotSquare) = print(io, e.A " not defined");
 
     colwise(x::Array) = squeeze(reshape(x, prod(size(x)), 1), 2);
-    
+                        # Array{T,2} ---> Array{T, 1}
 
     #PARDISOLIB = "$(ENV["HOME"])/.julia/v0.3/PARDISO/lib/PADISO"
 

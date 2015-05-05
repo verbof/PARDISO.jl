@@ -17,40 +17,37 @@ function errorPARDISO(error_)
         print("ParDiSO error: $(error_) --- ");
 
         if error_ == -1
-            print("input inconsistent\n");
+            print("Input inconsistent\n");
         elseif error_ == -2
-            print("not enough memory\n");
+            print("Not enough memory\n");
         elseif error_ == -3
-            print("reordering problem\n");
+            print("Reordering problem\n");
         elseif error_ == -4
-            print("zero pivot, numerical factorization or iterative refinement problem\n");
+            print("Zero pivot, numerical factorization or iterative refinement problem\n");
         elseif error_ == -5
-            print("unclassified (internal) error\n");
+            print("Unclassified (internal) error\n");
         elseif error_ == -6
-            print("preordering failed (matrix type 11, 13 only)\n");
+            print("Preordering failed (matrix type 11, 13 only)\n");
         elseif error_ == -7
-            print("diagonal matrix problem\n");
+            print("Diagonal matrix problem\n");
         elseif error_ == -8
-            print("32 bit integer overflow problem\n");
+            print("32-bit integer overflow problem\n");
         elseif error_ == -10
-            print("no license file pardiso.lic found\n");
+            print("No license file pardiso.lic found\n");
         elseif error_ == -11
-            print("license is expired.\n");
+            print("License is expired.\n");
         elseif error_ == -12
-            print("wrong username or hostname.\n");
+            print("Wrong username or hostname.\n");
         end
 
     else
-        println();
+        # Nothing!
     end
 
 end
 
 
 function initPARDISO(pardiso::ParDiSO)
-
-
-    #const PARDISOLIB = "/users/verbof/.julia/v0.3/PARDISO/lib/PARDISO";
 
 
     ccall( (:pardiso_init_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"), Void,
@@ -72,11 +69,11 @@ end
 
 function checkPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
 
-    if abs(pardiso.mtype) == 2 || 
-       abs(pardiso.mtype) == 4 || 
-           pardiso.mtype  == 6
-        
-        if !A.upper
+    if abs(pardiso.mtype) == 2 ||   #    real Symmetric Pos.Def. / Undef.
+       abs(pardiso.mtype) == 4 ||   # complex Hermitian Pos.Def. / Undef.
+           pardiso.mtype  == 6      # complex Symmetric
+
+        if !A.upper                 # Checks if the matrix is stored in upper triangular format. If not, error(...).
             error("pardiso.mtype = ±2 or ±4 or +6, but the matrix is not in upper triangular form (A.upper == false)");
         end
         
@@ -110,7 +107,6 @@ function smbfctPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
     idum   = 0;             # integer dummy
     nrhs   = 1;             # number of RHS's
 
-    #pardiso.iparm[33] = 1;   # compute determinant of the matrix if iparm[33]=1;
 
     if Tnzval == Float64
         ccall( (:pardiso_call_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
@@ -151,7 +147,7 @@ end
 
 
 function factorPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
-	# Generate LU-factorization of a real matrix A
+	# Generate LU-factorisation of a real matrix A
 
     pardiso.phase = 22;     # just numerical factorisation
     ddum = 0.0;             # double dummy
@@ -205,7 +201,7 @@ function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_r
     nrhs   = n_rhs;                     # number of right-hand-sides
     x      = zeros(Tnzval, nrhs*A.n);   # solution of the system
 
-    pardiso.iparm[6] = 0;      # puts the solution in x (b is NOT overwritten)
+    pardiso.iparm[6] = 0;               # Overwrites b with the soluzion if iparm[6] = 1;
 
     if Tnzval == Float64
         println("Solving real system...");
@@ -215,7 +211,6 @@ function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_r
             (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
             Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
-
             Ptr{Int32}, Ptr{Float64}),
             pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
             A.nzval, A.rowptr, A.colval, &idum,
@@ -247,9 +242,9 @@ end
 
 #=============================================================================
 #                       NOT ANYMORE (IT IS USELESS)
-# The following function checks if the RHS provided is a column vector
-# containing - at least one - RHS('s) or the RHS's are provided a a matrix. In
-# the second case, the vector is reshaped.
+# The following function checks if the variable b provided is a column vector
+# containing - at least one - some RHS's or the RHS's are provided a a matrix. 
+# In the second case, the vector is reshaped.
 #
 #         1   2  ... nrhs
 #       +---+---+---+---+                   
@@ -282,7 +277,7 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
         if s[1] == A.n              # check if it has a correct number of rows
             nrhs = s[2];            # the number of RHS is the number of columns of b
         else
-            error("The dimension of the ", s[2], "RHS's provided are not consistent with ", A.n, "\n");
+            error("The dimension of the ", s[2], "RHS's provided is not consistent with A.n = ", A.n, "\n");
         end
         
     end
@@ -298,7 +293,7 @@ end
 
 
 function memoryPARDISO(pardiso::ParDiSO)
-    # Returns the peak memory, in kB, consumption by PARDISO.
+    # Returns the peak memory consumption by PARDISO, in kB (see PARDISO Manual).
 
     return max(pardiso.iparm[15], pardiso.iparm[16]+pardiso.iparm[17]);
 
@@ -307,13 +302,12 @@ end
 
 
 function freePARDISO(pardiso::ParDiSO)
-    
-    # Free all the PARDISO memory.
+    # Releases all the PARDISO memory.
 
-    idum = Int32(0);
-    ddum = 0.0;
+    idum = Int32(0);            # integer dummy
+    ddum = 0.0;                 # double dummy
 
-    pardiso.phase = Int32(-1);
+    pardiso.phase = Int32(-1);  # Release internal memory for all matrices
 
     ccall( (:pardiso_call_, "/users/verbof/.julia/v0.4/PARDISO/lib/PARDISO"),
         Void,
