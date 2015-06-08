@@ -10,4 +10,14 @@ function pardisoSolveSystem(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
 end
 
 
+function pardisoFactor(mtype, A::SparsePardisoCSR)
+
+    pardiso = ParDiSO(mytpe, 0);
+
+    smbfctPARDISO(pardiso, A);
+    factorPARDISO(pardiso, A);
+
+    return pardiso
+
+end
 

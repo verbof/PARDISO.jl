@@ -15,7 +15,7 @@ endif
 #LIB = -L/users/verbof/Libraries/linuxAMD64 -lpardiso500-INTEL1301-X86-64
 
 SRC = call_pardiso.f90 call_pardiso_z.f90
-LIB = ${HOME}/Libraries/linuxAMD64/libpardiso500-INTEL1301-X86-64.so
+LIB = ${HOME}/Libraries/osx/libpardiso500-MACOS-X86-64.dylib
 
 all: $(SRC)
 	 $(FL) -shared -fPIC -fcray-pointer $(SRC) -o ../lib/PARDISO  $(LIB)

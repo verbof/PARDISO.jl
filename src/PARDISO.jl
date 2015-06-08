@@ -60,8 +60,6 @@ module PARDISO
         println("        iparm:  $(p.iparm)");
         println("        dparm:  $(p.dparm)");
         println("       );");
-
-        
     end
 
 
@@ -73,7 +71,7 @@ module PARDISO
     colwise(x::Array) = squeeze(reshape(x, prod(size(x)), 1), 2);
                         # Array{T,2} ---> Array{T, 1}
 
-    #PARDISOLIB = "$(ENV["HOME"])/.julia/v0.3/PARDISO/lib/PADISO"
+    PARDISOLIB = "/Users/verbof/.julia/v0.4/PARDISO/lib/PADISO"
 
     include("sparsepardiso.jl")
     include("pardisobase.jl")
@@ -87,6 +85,7 @@ module PARDISO
             solvePARDISO,
             memoryPARDISO,
             freePARDISO,
-            pardisoSolveSystem;
+            pardisoSolveSystem,
+            PARDISOLIB;
 
 end
