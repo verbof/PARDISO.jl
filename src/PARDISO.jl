@@ -2,7 +2,7 @@ module PARDISO
 
     importall Base;
 
-    type ParDiSO 
+    type ParDiSo 
 
         pt::Vector{Int64};      # Pointer to PARDISO memory
         maxfct::Int32;          # Maximunm number of factors w/ same non-zero structure
@@ -16,7 +16,7 @@ module PARDISO
         dparm::Vector{Float64}; # Float parameters
 
 
-        ParDiSO(matrixtype::Integer = 0, msglevel::Integer = 0) = 
+        ParDiSo(matrixtype::Integer = 0, msglevel::Integer = 0) = 
         begin
             new(zeros(Int64,64), 
                 1,
@@ -33,9 +33,9 @@ module PARDISO
 
     end
     
-    show(io::IO, p::ParDiSO) = 
+    show(io::IO, p::ParDiSo) = 
     begin 
-        println(io, "ParDiSO(");
+        println(io, "ParDiSo(");
         println(io, "        maxfct: $(p.maxfct)");
         println(io, "        mnum:   $(p.mnum)");
         println(io, "        mtype:  $(p.mtype)");
@@ -46,9 +46,9 @@ module PARDISO
         println(io, "       );");
     end
 
-    printPARDISO(p::ParDiSO) = 
+    printPARDISO(p::ParDiSo) = 
     begin
-        println("ParDiSO(");
+        println("ParDiSo(");
         println("        maxfct: $(p.maxfct)");
         println("        mnum:   $(p.mnum)");
         println("        mtype:  $(p.mtype)");
@@ -77,12 +77,13 @@ module PARDISO
     include("pardisobase.jl")
     include("pardisoext.jl");
 
-    export  ParDiSO, SparsePardisoCSR, printPARDISO, colwise;
+    export  ParDiSo, SparsePardisoCSR, printPARDISO, colwise;
     export  initPARDISO,
             checkPARDISO,
             smbfctPARDISO,
             factorPARDISO,
             solvePARDISO,
+            invertPARDISO,
             memoryPARDISO,
             freePARDISO,
             pardisoSolveSystem,

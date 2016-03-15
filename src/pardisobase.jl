@@ -14,7 +14,7 @@ function errorPARDISO(error_)
 
     if error_ != 0
   
-        print("ParDiSO error: $(error_) --- ");
+        print("ParDiSo error: $(error_) --- ");
 
         if error_ == -1
             print("Input inconsistent\n");
@@ -47,7 +47,7 @@ function errorPARDISO(error_)
 end
 
 
-function initPARDISO(pardiso::ParDiSO)
+function initPARDISO(pardiso::ParDiSo)
 
 
     ccall( (:pardiso_init_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"), Void,
@@ -67,7 +67,7 @@ end
 
 
 
-function checkPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
+function checkPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 
     if abs(pardiso.mtype) == 2 ||   #    real Symmetric Pos.Def. / Undef.
        abs(pardiso.mtype) == 4 ||   # complex Hermitian Pos.Def. / Undef.
@@ -99,7 +99,7 @@ function checkPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
 end
 
 
-function smbfctPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
+function smbfctPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 	# Reordering and Symbolic Factorisation + memory allocation for factors
 
     pardiso.phase = 11;     # just analysis
@@ -146,7 +146,7 @@ end
 
 
 
-function factorPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
+function factorPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 	# Generate LU-factorisation of a real matrix A
 
     pardiso.phase = 22;     # just numerical factorisation
@@ -192,7 +192,7 @@ end
 
 
 
-function solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_rhs::Int64, b::Array{Tnzval})
+function solvePARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval}, n_rhs::Int64, b::Array{Tnzval})
 	# Computes the solution for the system Ax = b, where b is 1 RHS.
 
     pardiso.phase = 33;                 # solve + iterative refinement
@@ -257,7 +257,7 @@ end
 #
 =============================================================================#
 
-function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
+function solvePARDISO(pardiso::ParDiSo, A::SparsePardisoCSR, b::Array)
 	# Computes the correct number of RHS's for an arbitrary vector b;
 
     s    = size(b);
@@ -292,7 +292,7 @@ function solvePARDISO(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
 end
 
 
-function memoryPARDISO(pardiso::ParDiSO)
+function memoryPARDISO(pardiso::ParDiSo)
     # Returns the peak memory consumption by PARDISO, in kB (see PARDISO Manual).
 
     return max(pardiso.iparm[15], pardiso.iparm[16]+pardiso.iparm[17]);
@@ -300,8 +300,59 @@ function memoryPARDISO(pardiso::ParDiSO)
 end
 
 
+function invertPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
+	# Generate LU-factorisation of a real matrix A
 
-function freePARDISO(pardiso::ParDiSO)
+    pardiso.phase = -22;    # just selective inversion
+    ddum = 0.0;             # double dummy
+    idum = 0;               # 32-bit integer dummy
+
+    pardiso.iparm[21] = 0;  # if == 1, uses 2x2 pivoting
+    pardiso.iparm[37] = 0;  # if == 0, PARDISO returns inverse in upper triang. format
+
+    
+    if Tnzval == Float64
+        println("Factorizing real matrix...")
+        
+        ccall( (:pardiso_call_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Float64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Float64}, Ptr{Float64},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+            &pardiso.error_, pardiso.dparm);
+
+    elseif Tnzval == Complex128
+        println("Factorizing complex matrix...")
+
+        ccall( (:pardiso_call_z_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
+            Void,
+            (Ptr{Int64}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Complex128}, Ptr{Int32}, Ptr{Int32}, Ptr{Int32},
+            Ptr{Int32}, Ptr{Int32}, Ptr{Int32}, Ptr{Complex128}, Ptr{Complex128},
+            Ptr{Int32}, Ptr{Float64}),
+            pardiso.pt, &pardiso.maxfct, &pardiso.mnum, &pardiso.mtype, &pardiso.phase, &(A.n),
+            A.nzval, A.rowptr, A.colval, &idum,
+            &idum, pardiso.iparm, &pardiso.msglvl, &ddum, &ddum,
+            &pardiso.error_, pardiso.dparm);
+
+    end
+
+    errorPARDISO(pardiso.error_);
+
+    println("Selective inversion completed.");
+
+    return copy(A);
+
+end
+
+
+
+
+function freePARDISO(pardiso::ParDiSo)
     # Releases all the PARDISO memory.
 
     idum = Int32(0);            # integer dummy

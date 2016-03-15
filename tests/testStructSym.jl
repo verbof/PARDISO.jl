@@ -2,10 +2,10 @@ using PARDISO
 
 println("********************** REAL STRUCT. SYMM.  **********************");
 
-p = ParDiSO(1,0);
+p = ParDiSo(1,0);
 initPARDISO(p);
 
-N = 100;
+N = 10;
 d = rand(N-2);
 T = triu(sprand(N,N, 0.5));
 
@@ -22,20 +22,17 @@ checkPARDISO(p, RR);
 smbfctPARDISO(p, RR);
 factorPARDISO(p, RR);
 
-
 x = rand(N);
 b = R*x;
 
 X = solvePARDISO(p, RR, b);
-
 println("Relative error on the solution: ", norm(X-x)/norm(x));
-
 
 freePARDISO(p);
 
 println("********************** COMPLEX STRUCT. SYMM.  **********************");
 
-p = ParDiSO(3,1);
+p = ParDiSo(3,1);
 initPARDISO(p);
 
 M = 100;

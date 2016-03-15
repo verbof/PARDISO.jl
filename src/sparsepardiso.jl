@@ -69,7 +69,7 @@ begin
 end 
 
 size(S::SparsePardisoCSR)     = (S.n, S.n)
-nnz(S::SparsePardisoCSR)      = int(S.rowptr[end]-1)
+nnz(S::SparsePardisoCSR)      = Int(S.rowptr[end]-1)
 countnz(S::SparsePardisoCSR)  = countnz(S.nzval)
 density(S::SparsePardisoCSR)  = countnz(S)/prod(size(S));
 nonzeros(S::SparsePardisoCSR) = S.nzval
@@ -109,6 +109,18 @@ copy(S::SparsePardisoCSR) =
     SparsePardisoCSR(S.upper, S.n, copy(S.rowptr), copy(S.colval), copy(S.nzval));
 
 
+function toCSC{T}(S::SparsePardisoCSR{T})
+
+    I = zeros(length(S.nzval));
+    for i = 1:S.n
+        I[S.rowptr[i]:S.rowptr[i+1]-1] = i;
+    end
+
+    A = sparse(convert(Vector{Int32},I), S.colval, S.nzval, S.n, S.n);
+
+    return A
+end
+
 function full{T}(S::SparsePardisoCSR{T})
     A = zeros(T, S.n, S.n)
     for row = 1 : S.n, k = S.rowptr[row] : (S.rowptr[row+1]-1)
@@ -117,12 +129,11 @@ function full{T}(S::SparsePardisoCSR{T})
     return A
 end
 
-
 float(S::SparsePardisoCSR)    = SparsePardisoCSR(S.upper, S.n, copy(S.rowptr), copy(S.colval), float(copy(S.nzval)))
 complex(S::SparsePardisoCSR)  = SparsePardisoCSR(S.upper, S.n, copy(S.rowptr), copy(S.colval), complex(copy(S.nzval)))
 #complex(A::SparsePardisoCSR, 
 #        B::SparsePardisoCSR)  = A + im*B
 
 
-
-export density;
+export density,
+       toCSC;

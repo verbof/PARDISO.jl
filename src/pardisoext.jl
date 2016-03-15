@@ -1,6 +1,6 @@
 # External functions to handle PARDISO functions
 
-function pardisoSolveSystem(pardiso::ParDiSO, A::SparsePardisoCSR, b::Array)
+function pardisoSolveSystem(pardiso::ParDiSo, A::SparsePardisoCSR, b::Array)
     
     smbfctPARDISO(pardiso, A);
     factorPARDISO(pardiso, A);
@@ -12,7 +12,7 @@ end
 
 function pardisoFactor(mtype, A::SparsePardisoCSR)
 
-    pardiso = ParDiSO(mytpe, 0);
+    pardiso = ParDiSo(mytpe, 0);
 
     smbfctPARDISO(pardiso, A);
     factorPARDISO(pardiso, A);
@@ -20,4 +20,16 @@ function pardisoFactor(mtype, A::SparsePardisoCSR)
     return pardiso
 
 end
+
+
+function pardisoSelInv(pardiso::ParDiSo, A::SparsePardisoCSR)
+    
+    smbfctPARDISO(pardiso, A);
+    factorPARDISO(pardiso, A);
+
+    return invertPARDISO(pardiso, A);
+
+end
+
+
 

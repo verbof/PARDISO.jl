@@ -9,7 +9,7 @@ N = size(A,1);
 println("********************** Testing REAL drivers **********************");
 println("\n\n");
 
-pardisoR = ParDiSO(-2, 1);
+pardisoR = ParDiSo(-2, 1);
 
 initPARDISO(pardisoR);
 
@@ -57,7 +57,7 @@ M = size(B,1);
 f = rand(M-1) + im*rand(M-1);
 B = B + spdiagm(f,+1, M,M) + spdiagm(conj(f),-1, M,M);
 
-pardisoC = ParDiSO(-4, 1);
+pardisoC = ParDiSo(-4, 1);
 
 initPARDISO(pardisoC);
 

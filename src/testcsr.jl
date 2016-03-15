@@ -49,6 +49,6 @@ CSC FORMAT:
 
 using PARDISO;
 
-pardiso = ParDiSO(-2,1);
+pardiso = ParDiSo(-2,1);
 
 initPARDISO(pardiso);
