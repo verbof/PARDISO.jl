@@ -155,7 +155,7 @@ function factorPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 
     
     if Tnzval == Float64
-        println("Factorizing real matrix...")
+        #println("Factorizing real matrix...")
         
         ccall( (:pardiso_call_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
@@ -169,7 +169,7 @@ function factorPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
             &pardiso.error_, pardiso.dparm);
 
     elseif Tnzval == Complex128
-        println("Factorizing complex matrix...")
+        #println("Factorizing complex matrix...")
 
         ccall( (:pardiso_call_z_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
@@ -201,10 +201,10 @@ function solvePARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval}, n_r
     nrhs   = n_rhs;                     # number of right-hand-sides
     x      = zeros(Tnzval, nrhs*A.n);   # solution of the system
 
-    pardiso.iparm[6] = 0;               # Overwrites b with the soluzion if iparm[6] = 1;
+    pardiso.iparm[6] = 0;               # Overwrites b with the solution if iparm[6] = 1;
 
     if Tnzval == Float64
-        println("Solving real system...");
+        #println("Solving real system...");
 
         ccall( (:pardiso_call_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
@@ -218,7 +218,7 @@ function solvePARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval}, n_r
             &pardiso.error_, pardiso.dparm);
 
     elseif Tnzval == Complex128
-        println("Solving complex system...");
+        #println("Solving complex system...");
     
         ccall( (:pardiso_call_z_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
@@ -234,6 +234,7 @@ function solvePARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval}, n_r
 
     errorPARDISO(pardiso.error_);
 
+    println("Solution of the system completed.");
     return x
 
 end
@@ -277,7 +278,7 @@ function solvePARDISO(pardiso::ParDiSo, A::SparsePardisoCSR, b::Array)
         if s[1] == A.n              # check if it has a correct number of rows
             nrhs = s[2];            # the number of RHS is the number of columns of b
         else
-            error("The dimension of the ", s[2], "RHS's provided is not consistent with A.n = ", A.n, "\n");
+            error("The dimension of the ", s[2], " RHS's provided is not consistent with A.n = ", A.n, "\n");
         end
         
     end
@@ -312,7 +313,7 @@ function invertPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 
     
     if Tnzval == Float64
-        println("Factorizing real matrix...")
+        #println("Inverting real matrix...")
         
         ccall( (:pardiso_call_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
@@ -326,7 +327,7 @@ function invertPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
             &pardiso.error_, pardiso.dparm);
 
     elseif Tnzval == Complex128
-        println("Factorizing complex matrix...")
+        #println("Inverting complex matrix...")
 
         ccall( (:pardiso_call_z_, "/Users/fabio/.julia/v0.4/PARDISO/lib/PARDISO"),
             Void,
@@ -350,6 +351,17 @@ function invertPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 end
 
 
+smbfctPARDISO{Tnzval}(pardiso::ParDiSo, A::SparseMatrixCSC{Tnzval,Int}) = smbfctPARDISO(pardiso, SparsePardisoCSR(A));
+
+checkPARDISO{Tnzval}(pardiso::ParDiSo, A::SparseMatrixCSC{Tnzval, Int}) =  checkPARDISO(pardiso::ParDiSo, SparsePardisoCSR(A));
+
+factorPARDISO{Tnzval}(pardiso::ParDiSo, A::SparseMatrixCSC{Tnzval,Int}) = factorPARDISO(pardiso, SparsePardisoCSR(A));
+
+solvePARDISO{Tnzval}(pardiso::ParDiSo, A::SparseMatrixCSC{Tnzval,Int}, n_rhs::Int64, b::Array{Tnzval}) = solvePARDISO(pardiso, SparsePardisoCSR(A), n_rhs, b);
+
+solvePARDISO{Tnzval}(pardiso::ParDiSo, A::SparseMatrixCSC{Tnzval,Int}, b::Array) = solvePARDISO(pardiso, SparsePardisoCSR(A), b);
+
+invertPARDISO{Tnzval}(pardiso::ParDiSo, A::SparseMatrixCSC{Tnzval,Int}) = invertPARDISO(pardiso, SparsePardisoCSR(A));
 
 
 function freePARDISO(pardiso::ParDiSo)

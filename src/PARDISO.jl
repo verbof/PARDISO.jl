@@ -73,8 +73,8 @@ module PARDISO
 
     PARDISOLIB = "/Users/verbof/.julia/v0.4/PARDISO/lib/PADISO"
 
-    include("sparsepardiso.jl")
-    include("pardisobase.jl")
+    include("sparsepardiso.jl");
+    include("pardisobase.jl");
     include("pardisoext.jl");
 
     export  ParDiSo, SparsePardisoCSR, printPARDISO, colwise;
@@ -87,6 +87,7 @@ module PARDISO
             memoryPARDISO,
             freePARDISO,
             pardisoSolveSystem,
-            PARDISOLIB;
+            PARDISOLIB,
+            pardisoSelInv;
 
 end

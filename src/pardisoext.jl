@@ -32,4 +32,5 @@ function pardisoSelInv(pardiso::ParDiSo, A::SparsePardisoCSR)
 end
 
 
+pardisoSelInv(pardiso::ParDiSo, A::SparseMatrixCSC) = pardisoSelInv(pardiso, SparsePardisoCSR(A))
 
