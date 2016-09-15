@@ -9,13 +9,13 @@ Clone this repository in the julia packages folder:
     git clone https://github.com/verbof/PARDISO.jl PARDISO
     cd PARDISO/src
                     
-Set correctly the `FC` variable to the correct value for your system in `Makefile`; then, modify the correct PARDISO shared library needed for compiling.
+Set correctly the `FC` variable to the correct value for your system in `Makefile`; then, modify the variable `LIBPARDISO` to poit at the correct PARDISO shared library needed for compiling.
 
 
 ## The ParDiSO type
 The basic constructor 
 
-        ParDiSO(matrixtype::Integer, msglevel::Integer);
+        ParDiSo(matrixtype::Integer, msglevel::Integer);
 
 creates a variable that is going to be used for a matrix of the the type `matrixtype` and with a verbose-level `msglevel` (`0`: no messages from PARDISO, `1`: verbose mode).
 
@@ -33,7 +33,7 @@ are provided. **NOTE** that this class saves just the upper triangular part of t
 * Complex Symmetric
 
 ## PARDISO initialization
-Before performing any operation using PARDISO, it is needed to initialize the **ParDiSO** object using the `initPARDISO` function.
+Before performing any operation using PARDISO, it is needed to initialize the **ParDiSo** object using the `initPARDISO` function.
 
 _*Important*: **never** change the values of `pt`_.
 
@@ -44,27 +44,27 @@ The PARDISO solver relies on the matrix factorization to solve the systems. So, 
 ### Check Matrix (just for debugging purposes)
 Checks if the input matrix is consistent according to the matrix-type.
 
-        checkPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
+        checkPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 
 ### Symbolic factorization
 Performs a reordering of the rows and a symbolic factorization on the matrix in order to reduce the fill-in in the factorization phase.
 
-        smbfctPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
+        smbfctPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 
 ### Factorization
 Computes an **LU** factorization for the matrix and stores internally the factors.
 
-        factorPARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval})
+        factorPARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval})
 
 ### Solve system
 Solves the system **Ax = b** using the internal factors and performs an iterative refinement.
 
-        solvePARDISO{Tnzval}(pardiso::ParDiSO, A::SparsePardisoCSR{Tnzval}, n_rhs::Int64, b::Vector{Tnzval})
+        solvePARDISO{Tnzval}(pardiso::ParDiSo, A::SparsePardisoCSR{Tnzval}, n_rhs::Int64, b::Vector{Tnzval})
 
 ### Free memory
 Realeases internal PARDISO memory.
 
-        freePARDISO(pardiso::ParDiSO)
+        freePARDISO(pardiso::ParDiSo)
 
 # Example code
 
@@ -75,7 +75,7 @@ M = 1000;
 f = rand(M-1) + im*rand(M-1);
 A = speye(M) + spdiagm(f,+1, M,M) + spdiagm(f,-1, M,M);      # Creates a COMPLEX SYMMETRIC matrix
 
-pardiso = ParDiSO(+6, 1);
+pardiso = ParDiSo(+6, 1);
 
 initPARDISO(pardiso);
 
