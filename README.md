@@ -9,9 +9,7 @@ Clone this repository in the julia packages folder:
     git clone https://github.com/verbof/PARDISO.jl PARDISO
     cd PARDISO/src
                     
-Set correctly the `CC`, `FC`, `CL` variables to the correct values for your system in `Makefile.inc`.
-
-Then, modify the `Makefile` in order to link to the correct PARDISO shared library needed for compiling.
+Set correctly the `FC` variable to the correct value for your system in `Makefile`; then, modify the correct PARDISO shared library needed for compiling.
 
 
 ## The ParDiSO type
